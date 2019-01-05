@@ -2,6 +2,8 @@
 
 from Python2Parser import Python2Parser
 from antlr4.Token  import CommonToken
+import org.antlr.v4.runtime.CharStream;
+
 class IndentStack:
     def __init__(self)    : self._s = []
     def empty(self)       : return len(self._s) == 0
@@ -131,7 +133,7 @@ public class Python2Lexer extends Lexer {
 	    if not self._tokens.empty():
 	        return self._tokens.deq()
 	    else:
-	        t = super(Python2Lexer, self).nextToken()
+	        t = super(Python2Lexer, self).nextToken(CharStream charStream)
 	        if t.type != Token.EOF:
 	            return t
 	        else:
