@@ -1,7 +1,13 @@
-public class MyVisitor<T> extends Python3BaseVisitor {
+import org.antlr.v4.runtime.misc.ObjectEqualityComparator;
+
+import java.sql.SQLOutput;
+
+// realizado por Samael Salcedo y Camilo Nieto
+public class MyVisitor<T> extends Python3BaseVisitor<T> {
 
     @Override
     public T visitSingle_input(Python3Parser.Single_inputContext ctx) {
+        System.out.println("single input");
         return (T)visitChildren(ctx);
     }
 
@@ -62,26 +68,44 @@ public class MyVisitor<T> extends Python3BaseVisitor {
     }
 
     @Override public T visitSimple_stmt(Python3Parser.Simple_stmtContext ctx) {
+        System.out.println("simple stmt");
         return (T)visitChildren(ctx);
     }
 
     @Override public T visitSmall_stmt(Python3Parser.Small_stmtContext ctx) {
+        System.out.println("small stmt");
         return (T)visitChildren(ctx);
     }
 
     @Override public T visitExpr_stmt(Python3Parser.Expr_stmtContext ctx) {
-        return (T)visitChildren(ctx);
+        System.out.println("expr stmt");
+        System.out.println("ctx: "+ctx.getText());
+        if(ctx.getText().contains("=")){
+            System.out.println("igual papa");
+            System.out.println("SOLO VAR");
+            String var = (String)visitTestlist_star_expr(ctx.testlist_star_expr(0));
+            System.out.println("SOLO VALUE");
+            String value = (String)visitTestlist_star_expr(ctx.testlist_star_expr(1));
+            System.out.println("var: "+var);
+            System.out.println("value: "+value);
+        }else {
+            return (T)visitChildren(ctx);
+        }
+        return null;
     }
 
     @Override public T visitAnnassign(Python3Parser.AnnassignContext ctx) {
+        System.out.println("Annassign");
         return (T)visitChildren(ctx);
     }
 
     @Override public T visitTestlist_star_expr(Python3Parser.Testlist_star_exprContext ctx) {
+        System.out.println("Testlist star expr");
         return (T)visitChildren(ctx);
     }
 
     @Override public T visitAugassign(Python3Parser.AugassignContext ctx) {
+        System.out.println("Augassign");
         return (T)visitChildren(ctx);
     }
 
@@ -150,16 +174,54 @@ public class MyVisitor<T> extends Python3BaseVisitor {
     @Override public T visitAssert_stmt(Python3Parser.Assert_stmtContext ctx) {
         return (T)visitChildren(ctx);
     }
+
     @Override public T visitCompound_stmt(Python3Parser.Compound_stmtContext ctx) {
+        System.out.println("Compound");
         return (T)visitChildren(ctx);
     }
     @Override public T visitAsync_stmt(Python3Parser.Async_stmtContext ctx) {
         return (T)visitChildren(ctx);
     }
+
     @Override public T visitIf_stmt(Python3Parser.If_stmtContext ctx) {
-        return (T)visitChildren(ctx);
+        System.out.println("If");
+        if(ctx.IF()!=null){
+            Boolean op = (Boolean) visitTest(ctx.test(0));
+            boolean nothing = false;
+            int times = 0;
+            //System.out.println("lo que esta en if de compari:" +op);
+            if(op){
+                visitSuite(ctx.suite(0));
+            }else if(ctx.ELIF().size()>0){
+                for (int i = 0; i <ctx.ELIF().size(); i++) {
+                    System.out.println("ElIF number "+i);
+                    op = (Boolean) visitTest(ctx.test(i));
+                    if(op){
+                        visitSuite(ctx.suite(i));
+                        break;
+                    }else
+                        times++;
+                }
+                if(times == ctx.ELIF().size())
+                    nothing = true;
+            }else
+                nothing = true;
+
+
+            if (nothing){
+                if(ctx.ELIF().size()>0)
+                    visitSuite(ctx.suite(ctx.ELIF().size()+1));
+                else
+                    visitSuite(ctx.suite(1));
+            }
+
+        }
+        //return (T)visitChildren(ctx);
+        return null;
     }
-    @Override public T visitWhile_stmt(Python3Parser.While_stmtContext ctx) {
+
+    @Override
+    public T visitWhile_stmt(Python3Parser.While_stmtContext ctx) {
         return (T)visitChildren(ctx);
     }
 
@@ -178,48 +240,172 @@ public class MyVisitor<T> extends Python3BaseVisitor {
     @Override public T visitExcept_clause(Python3Parser.Except_clauseContext ctx) {
         return (T)visitChildren(ctx);
     }
-    @Override public T visitSuite(Python3Parser.SuiteContext ctx) {
+
+    @Override
+    public T visitSuite(Python3Parser.SuiteContext ctx) {
+        System.out.println("suite: "+ctx.getText());
         return (T)visitChildren(ctx);
     }
-    @Override public T visitTest(Python3Parser.TestContext ctx) {
+
+    @Override
+    public T visitTest(Python3Parser.TestContext ctx) {
+        System.out.println("test");
+        //System.out.println("ctx: "+ctx.getText());
         return (T)visitChildren(ctx);
     }
+
     @Override public T visitTest_nocond(Python3Parser.Test_nocondContext ctx) {
         return (T)visitChildren(ctx);
     }
     @Override public T visitLambdef(Python3Parser.LambdefContext ctx) {
-        return (T)visitChildren(ctx);
+        if (ctx.LAMBDA()!=null){
+            return (T) visitVarargslist(ctx.varargslist());
+        }
+        return (T) super.visitLambdef(ctx);
     }
+
     @Override public T visitLambdef_nocond(Python3Parser.Lambdef_nocondContext ctx) {
         return (T)visitChildren(ctx);
     }
+
     @Override public T visitOr_test(Python3Parser.Or_testContext ctx) {
+        System.out.println("Or test");
         return (T)visitChildren(ctx);
     }
     @Override public T visitAnd_test(Python3Parser.And_testContext ctx) {
+        System.out.println("And test");
         return (T)visitChildren(ctx);
     }
     @Override public T visitNot_test(Python3Parser.Not_testContext ctx) {
-        return (T)visitChildren(ctx);
+        System.out.println("Not test");
+        //System.out.println("ctx: "+ctx.getText());
+        if(ctx.NOT()!=null){
+            return (T)visitNot_test(ctx.not_test());
+        }else{
+            System.out.println("else in Not test");
+            return (T)visitChildren(ctx);
+        }
+
     }
     @Override public T visitComparison(Python3Parser.ComparisonContext ctx) {
-        return (T)visitChildren(ctx);
+        //System.out.println("lo que tengo: "+ctx.getText());
+        System.out.println("comparison");
+        if (ctx.expr(1)!=null){
+            System.out.println("ctx: "+ctx.getText());
+            String expr0 = ctx.expr(0).getText();
+            String expr1 = ctx.expr(1).getText();
+            String comp  = ctx.comp_op(0).getText();
+            Boolean ans = null;
+            if (expr0.charAt(0)>=48 && expr0.charAt(0)<=57){
+                if (expr1.charAt(0)>=48 && expr1.charAt(0)<=57){
+                    double n1 = Double.parseDouble(expr0);
+                    double n2 = Double.parseDouble(expr1);
+                    switch (comp){
+                        case "<":
+                            ans = n1 < n2;
+                            break;
+                        case ">":
+                            ans = n1 > n2;
+                            break;
+                        case "<=":
+                            ans = n1 <= n2;
+                            break;
+                        case ">=":
+                            ans = n1 >= n2;
+                            break;
+                        case "==":
+                            ans = Math.abs(n1-n2)<0.000000001;
+                            break;
+                        case "!=":
+                            ans = Math.abs(n1-n2)>0.000000001;
+                    }
+                    return (T)ans;
+                }else{
+                    //puede ser variable u otra cosa
+                }
+            }else{
+                //puede ser variable u otra cosa
+                if (expr1.charAt(0)>=48 && expr1.charAt(0)<=57){
+                    System.out.println("ambos Numeros");
+                }else{
+                    //puede ser variable u otra cosa
+                }
+            }
+        }else{
+            System.out.println("not comparison of if");
+            return (T)visitChildren(ctx);
+        }
+        return null;
     }
     @Override public T visitComp_op(Python3Parser.Comp_opContext ctx) {
+        System.out.println("Comp_op");
+        return  (T) ctx.getText();
+        //return (T)visitChildren(ctx);
+    }
+
+    @Override public T visitStar_expr(Python3Parser.Star_exprContext ctx) {
         return (T)visitChildren(ctx);
     }
 
-    @Override public T visitStar_expr(Python3Parser.Star_exprContext ctx) { return (T)visitChildren(ctx); }
-    @Override public T visitExpr(Python3Parser.ExprContext ctx) { return (T)visitChildren(ctx); }
-    @Override public T visitXor_expr(Python3Parser.Xor_exprContext ctx) { return (T)visitChildren(ctx); }
-    @Override public T visitAnd_expr(Python3Parser.And_exprContext ctx) { return (T)visitChildren(ctx); }
-    @Override public T visitShift_expr(Python3Parser.Shift_exprContext ctx) { return (T)visitChildren(ctx); }
-    @Override public T visitArith_expr(Python3Parser.Arith_exprContext ctx) { return (T)visitChildren(ctx); }
-    @Override public T visitTerm(Python3Parser.TermContext ctx) { return (T)visitChildren(ctx); }
-    @Override public T visitFactor(Python3Parser.FactorContext ctx) { return (T)visitChildren(ctx); }
-    @Override public T visitPower(Python3Parser.PowerContext ctx) { return (T) visitChildren(ctx); }
-    @Override public T visitAtom_expr(Python3Parser.Atom_exprContext ctx) { return (T)visitChildren(ctx); }
-    @Override public T visitAtom(Python3Parser.AtomContext ctx) { return (T)visitChildren(ctx); }
+    @Override public T visitExpr(Python3Parser.ExprContext ctx) {
+        System.out.println("Expr");
+        return (T)visitChildren(ctx);
+    }
+    @Override public T visitXor_expr(Python3Parser.Xor_exprContext ctx) {
+        System.out.println("Xor-expr");
+        return (T)visitChildren(ctx);
+    }
+    @Override public T visitAnd_expr(Python3Parser.And_exprContext ctx) {
+        System.out.println("And-expr");
+        return (T)visitChildren(ctx);
+    }
+    @Override
+    public T visitShift_expr(Python3Parser.Shift_exprContext ctx) {
+        System.out.println("shift-expr");
+        return (T)visitChildren(ctx);
+    }
+
+    @Override
+    public T visitArith_expr(Python3Parser.Arith_exprContext ctx) {
+        System.out.println("arith-expr");
+        return (T)visitChildren(ctx);
+    }
+    @Override
+    public T visitTerm(Python3Parser.TermContext ctx) {
+        System.out.println("Term");
+        return (T)visitChildren(ctx);
+    }
+
+    @Override
+    public T visitFactor(Python3Parser.FactorContext ctx) {
+        System.out.println("factor");
+        return (T)visitChildren(ctx);
+    }
+
+    @Override
+    public T visitPower(Python3Parser.PowerContext ctx) {
+        System.out.println("power");
+        return (T) visitChildren(ctx);
+    }
+
+    @Override
+    public T visitAtom_expr(Python3Parser.Atom_exprContext ctx) {
+        System.out.println("Atom_expr");
+        return (T)visitChildren(ctx);
+    }
+
+    @Override
+    public T visitAtom(Python3Parser.AtomContext ctx) {
+        System.out.println("Atom");
+        if(ctx.NAME()!=null || ctx.NUMBER()!=null || ctx.STRING()!=null){
+            System.out.println("algun name");
+            return (T)ctx.getText();
+        }else{
+            return (T)visitChildren(ctx);
+        }
+        //return (T)visitChildren(ctx);
+
+    }
     @Override public T visitTestlist_comp(Python3Parser.Testlist_compContext ctx) { return (T)visitChildren(ctx); }
     @Override public T visitTrailer(Python3Parser.TrailerContext ctx) { return (T)visitChildren(ctx); }
     @Override public T visitSubscriptlist(Python3Parser.SubscriptlistContext ctx) { return (T)visitChildren(ctx); }
