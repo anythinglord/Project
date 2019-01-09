@@ -13,7 +13,7 @@
 - Desarrollo del Compilador
 	- Estructuras de control
 		- Condicionales 
-			- IF completo 100%
+			- if
 			- Switch  			
 		- Ciclos 
 	- Declaracion de variables y Funciones
