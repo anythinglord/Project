@@ -1,9 +1,13 @@
 import org.antlr.v4.runtime.misc.ObjectEqualityComparator;
 
 import java.sql.SQLOutput;
+import java.util.HashMap;
 
 // realizado por Samael Salcedo y Camilo Nieto
 public class MyVisitor<T> extends Python3BaseVisitor<T> {
+
+    public static HashMap<String,Object> LocalVar = new HashMap<>();
+    public static String ident = "";
 
     @Override
     public T visitSingle_input(Python3Parser.Single_inputContext ctx) {
@@ -79,15 +83,27 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
 
     @Override public T visitExpr_stmt(Python3Parser.Expr_stmtContext ctx) {
         System.out.println("expr stmt");
-        System.out.println("ctx: "+ctx.getText());
+        //System.out.println("ctx: "+ctx.getText());
         if(ctx.getText().contains("=")){
-            System.out.println("igual papa");
-            System.out.println("SOLO VAR");
+
             String var = (String)visitTestlist_star_expr(ctx.testlist_star_expr(0));
-            System.out.println("SOLO VALUE");
             String value = (String)visitTestlist_star_expr(ctx.testlist_star_expr(1));
-            System.out.println("var: "+var);
-            System.out.println("value: "+value);
+            Object a = value;
+            //System.out.println("var: "+var+",value: "+value);
+            //System.out.println("IDENT: "+ident);
+            if(ident.equals("ID")) {
+                if (LocalVar.get(value) == null)
+                    System.out.println(value + " is not defined");
+                else
+                    LocalVar.put(var, LocalVar.get(value));
+
+            }else{
+                LocalVar.put(var,a);
+            }
+
+            //if(value)
+
+            System.out.println("lo que hay en var: "+LocalVar.get(var));
         }else {
             return (T)visitChildren(ctx);
         }
@@ -397,10 +413,21 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
     @Override
     public T visitAtom(Python3Parser.AtomContext ctx) {
         System.out.println("Atom");
-        if(ctx.NAME()!=null || ctx.NUMBER()!=null || ctx.STRING()!=null){
-            System.out.println("algun name");
-            return (T)ctx.getText();
-        }else{
+        if(ctx.NAME()!=null){
+            //System.out.println("ID");
+            ident = "ID";
+            return (T)ctx.NAME().getText();
+        }else if(ctx.NUMBER()!=null){
+            //System.out.println("NUMBER");
+            ident = "NUMBER";
+            return (T)ctx.NUMBER().getText();
+        }
+        else if(ctx.STRING()!=null){
+            System.out.println("STRING");
+            ident = "STRING";
+            return (T)ctx.STRING(0).getText();
+        }
+        else{
             return (T)visitChildren(ctx);
         }
         //return (T)visitChildren(ctx);

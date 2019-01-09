@@ -12,12 +12,14 @@
 - Desarrollo del Compilador
 	- Estructuras de control
 		- Condicionales 
-			- IF completo 100%
+			- if 
 			- Switch  			
-		- Ciclos 
+		- Ciclos
+ 
 	- Declaracion de variables y Funciones
-		- Guardado de Variables locales
+		- Declaracion Multiple
+		- Guardar Variables locales
 		
-	- Importe de libreria 
+	- Importe de librerias
 	
 ** Fase 2
