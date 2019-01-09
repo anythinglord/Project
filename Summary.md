@@ -9,11 +9,11 @@
 
 **Fase 1**
 
-- Utilizacion de la gramatica de Python 3
+- Utilizar gramatica de Python 3
 - Desarrollo del Compilador
 	- Estructuras de control
 		- Condicionales 
-			- if
+			- if completo 
 			- Switch  			
 		- Ciclos 
 	- Declaracion de variables y Funciones

@@ -89,7 +89,7 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
             String var = (String)visitTestlist_star_expr(ctx.testlist_star_expr(0));
             String value = (String)visitTestlist_star_expr(ctx.testlist_star_expr(1));
             Object a = value;
-            //System.out.println("var: "+var+",value: "+value);
+            System.out.println("var: "+var+",value: "+value);
             //System.out.println("IDENT: "+ident);
             if(ident.equals("ID")) {
                 if (LocalVar.get(value) == null)
@@ -97,13 +97,10 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
                 else
                     LocalVar.put(var, LocalVar.get(value));
 
-            }else{
+            }else
                 LocalVar.put(var,a);
-            }
 
-            //if(value)
-
-            System.out.println("lo que hay en var: "+LocalVar.get(var));
+            //System.out.println("lo que hay en var: "+LocalVar.get(var));
         }else {
             return (T)visitChildren(ctx);
         }
@@ -206,31 +203,32 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
             boolean nothing = false;
             int times = 0;
             //System.out.println("lo que esta en if de compari:" +op);
-            if(op){
-                visitSuite(ctx.suite(0));
-            }else if(ctx.ELIF().size()>0){
-                for (int i = 0; i <ctx.ELIF().size(); i++) {
-                    System.out.println("ElIF number "+i);
-                    op = (Boolean) visitTest(ctx.test(i));
-                    if(op){
-                        visitSuite(ctx.suite(i));
-                        break;
-                    }else
-                        times++;
-                }
-                if(times == ctx.ELIF().size())
+            if(op !=null){
+                if(op){
+                    visitSuite(ctx.suite(0));
+                }else if(ctx.ELIF().size()>0){
+                    for (int i = 0; i <ctx.ELIF().size(); i++) {
+                        System.out.println("ElIF number "+i);
+                        op = (Boolean) visitTest(ctx.test(i));
+                        if(op){
+                            visitSuite(ctx.suite(i));
+                            break;
+                        }else
+                            times++;
+                    }
+                    if(times == ctx.ELIF().size())
+                        nothing = true;
+                }else
                     nothing = true;
-            }else
-                nothing = true;
 
 
-            if (nothing){
-                if(ctx.ELIF().size()>0)
-                    visitSuite(ctx.suite(ctx.ELIF().size()+1));
-                else
-                    visitSuite(ctx.suite(1));
+                if (nothing && ctx.suite().size()>1){
+                    if(ctx.ELIF().size()>0)
+                        visitSuite(ctx.suite(ctx.ELIF().size()+1));
+                    else
+                        visitSuite(ctx.suite(1));
+                }
             }
-
         }
         //return (T)visitChildren(ctx);
         return null;
@@ -303,10 +301,24 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
         }
 
     }
-    @Override public T visitComparison(Python3Parser.ComparisonContext ctx) {
+
+    public Boolean compare(double n1,double n2,String comp){
+        Boolean ans = null;
+        switch (comp){
+            case "<": ans = n1 < n2; break;
+            case ">": ans = n1 > n2; break;
+            case "<=": ans = n1 <= n2; break;
+            case ">=": ans = n1 >= n2; break;
+            case "==": ans = Math.abs(n1-n2)<0.000000001; break;
+            case "!=": ans = Math.abs(n1-n2)>0.000000001; break;
+        }
+        return ans;
+    }
+    @Override
+    public T visitComparison(Python3Parser.ComparisonContext ctx) {
         //System.out.println("lo que tengo: "+ctx.getText());
         System.out.println("comparison");
-        if (ctx.expr(1)!=null){
+        if (ctx.expr(1) != null){
             System.out.println("ctx: "+ctx.getText());
             String expr0 = ctx.expr(0).getText();
             String expr1 = ctx.expr(1).getText();
@@ -316,42 +328,64 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
                 if (expr1.charAt(0)>=48 && expr1.charAt(0)<=57){
                     double n1 = Double.parseDouble(expr0);
                     double n2 = Double.parseDouble(expr1);
-                    switch (comp){
-                        case "<":
-                            ans = n1 < n2;
-                            break;
-                        case ">":
-                            ans = n1 > n2;
-                            break;
-                        case "<=":
-                            ans = n1 <= n2;
-                            break;
-                        case ">=":
-                            ans = n1 >= n2;
-                            break;
-                        case "==":
-                            ans = Math.abs(n1-n2)<0.000000001;
-                            break;
-                        case "!=":
-                            ans = Math.abs(n1-n2)>0.000000001;
-                    }
-                    return (T)ans;
+                    System.out.println("Ambos Numeros");
+                    return (T)compare(n1,n2,comp);
                 }else{
-                    //puede ser variable u otra cosa
+                    double n1 = Double.parseDouble(expr0);
+                    if(LocalVar.get(expr1)==null){
+                        System.out.println(expr1+" is not defined");
+                        return (T)null;
+                    }
+                    else{
+                        double n2 = (double)LocalVar.get(expr1);
+                        return (T)compare(n1,n2,comp);
+                    }
                 }
             }else{
                 //puede ser variable u otra cosa
                 if (expr1.charAt(0)>=48 && expr1.charAt(0)<=57){
-                    System.out.println("ambos Numeros");
+                    System.out.println("segundo numero el primero no");
+                    double n2 = Double.parseDouble(expr1);
+                    if(LocalVar.get(expr0)==null){
+                        System.out.println(expr0+" is not defined");
+                        return (T)null;
+                    }
+                    else{
+                        double n1 = (double)LocalVar.get(expr0);
+                        return (T)compare(n1,n2,comp);
+                    }
+
                 }else{
                     //puede ser variable u otra cosa
+                    if(LocalVar.get(expr0) == null){
+
+                        if(LocalVar.get(expr1) == null){
+                            System.out.println(expr1+" is not defined");
+                            return (T)null;
+                        }else{
+                            System.out.println(expr0+" is not defined");
+                            return (T)null;
+                        }
+
+
+                    }
+                    else{
+                        double n1 = (double)LocalVar.get(expr0);
+                        if(LocalVar.get(expr1) == null){
+                            System.out.println(expr1+" is not defined");
+                            return (T)null;
+                        }else{
+                            double n2 = (double)LocalVar.get(expr1);
+                            return (T)compare(n1,n2,comp);
+                        }
+                    }
                 }
             }
         }else{
             System.out.println("not comparison of if");
             return (T)visitChildren(ctx);
         }
-        return null;
+        //return null;
     }
     @Override public T visitComp_op(Python3Parser.Comp_opContext ctx) {
         System.out.println("Comp_op");
@@ -418,7 +452,7 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
             ident = "ID";
             return (T)ctx.NAME().getText();
         }else if(ctx.NUMBER()!=null){
-            //System.out.println("NUMBER");
+            System.out.println("NUMBER");
             ident = "NUMBER";
             return (T)ctx.NUMBER().getText();
         }
