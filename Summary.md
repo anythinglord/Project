@@ -1,5 +1,6 @@
 ## Proyecto Final Lenguajes de Computadores
-** Diseñado por Camilo Nieto & Samael Salcedo
+
+**Diseñado por Camilo Nieto & Samael Salcedo**
 
 **Fases del Proyecto**
 
@@ -12,14 +13,16 @@
 - Utilizar gramatica de Python 3
 - Desarrollo del Compilador
 	- Estructuras de control
+		
 		- Condicionales 
-			- if completo 
-			- Switch  			
-		- Ciclos 
+			- IF completo  			
+		- Ciclos
+			- While 
 	- Declaracion de variables y Funciones
+		
 		- Declaracion multiple
 		- Guardar Variables locales
 		
-	- Importe de libreria 
+	- Importe de librerias
 	
 **Fase 2**
