@@ -12,16 +12,25 @@
 
 - Utilizar gramatica de Python 3
 - Desarrollo del Compilador
+
 	- Estructuras de control
 		
 		- Condicionales 
-			- IF completo  			
+			- If  
+			
 		- Ciclos
+			- For 		
 			- While 
+	- Asignacion
+
+		- Compleja 
+		- Deteccion de Errores 
+
 	- Declaracion de variables y Funciones
 		
 		- Declaracion multiple
 		- Guardar Variables locales
+		- Deteccion de Errores
 		
 	- Importe de librerias
 	
