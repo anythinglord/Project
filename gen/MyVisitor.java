@@ -2,12 +2,26 @@ import org.antlr.v4.runtime.misc.ObjectEqualityComparator;
 import org.stringtemplate.v4.ST;
 
 import java.sql.SQLOutput;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 // realizado por Samael Salcedo y Camilo Nieto
 public class MyVisitor<T> extends Python3BaseVisitor<T> {
 
+    public static class duo{
+
+        Python3Parser.SuiteContext sc;
+        Python3Parser.ParametersContext pr;
+
+        public duo(Python3Parser.ParametersContext pr,Python3Parser.SuiteContext sc){
+            this.sc = sc;
+            this.pr = pr;
+        }
+    }
+
     public static HashMap<String,Object> LocalVar = new HashMap<>();
+    public static HashMap<String,duo> Functions = new HashMap<>();
+
     public static String ident = "";
 
     private static boolean isInt(String cadena){
@@ -59,22 +73,29 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
     }
 
     @Override public T visitAsync_funcdef(Python3Parser.Async_funcdefContext ctx) {
+
         return (T)visitChildren(ctx);
     }
 
     @Override public T visitFuncdef(Python3Parser.FuncdefContext ctx) {
+        System.out.println("Funcdef");
+        Functions.put(ctx.NAME().getText(),new duo(ctx.parameters(),ctx.suite()));
         return (T)visitChildren(ctx);
     }
 
     @Override public T visitParameters(Python3Parser.ParametersContext ctx) {
+        System.out.println("parameters");
+        System.out.println("ctx in parameters: "+ctx.getText());
         return (T)visitChildren(ctx);
     }
 
     @Override public T visitTypedargslist(Python3Parser.TypedargslistContext ctx) {
+        System.out.println("typedargslist");
         return (T)visitChildren(ctx);
     }
 
     @Override public T visitTfpdef(Python3Parser.TfpdefContext ctx) {
+        System.out.println("Tfpdef");
         return (T)visitChildren(ctx);
     }
 
@@ -659,7 +680,32 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
                 //System.out.println("is a range ----------------->");
                 return (T)visitArglist(ctx.trailer(0).arglist());
             }else{
-                System.out.println("otra cosa");
+                System.out.println("Funciones maybe!");
+                //System.out.println("fun: "+fun);
+                if(Functions.containsKey(fun)){
+
+                    Python3Parser.TypedargslistContext tp =Functions.get(fun).pr.typedargslist();
+                    Python3Parser.ArglistContext arg = ctx.trailer(0).arglist();
+                    for (int i = 0; i < tp.tfpdef().size() ; i++)
+                        LocalVar.put(tp.tfpdef().get(i).getText(),arg.argument(i).getText());
+
+                    //System.out.println("localvar: "+LocalVar);
+                    visitSuite(Functions.get(fun).sc);
+                    for (int i = 0; i < tp.tfpdef().size() ; i++)
+                        LocalVar.remove(tp.tfpdef().get(i).getText());
+
+
+
+                }else{
+                    System.out.println(fun+" is not defined");
+                }
+                /*Python3Parser.ArglistContext arg = ctx.trailer(0).arglist();
+                ArrayList<String> args = new ArrayList<>();
+                for (int i = 0; i < arg.argument().size() ; i++) {
+                    args.add(arg.argument(i).getText());
+                }
+                Functions.put(fun,args);
+                System.out.println("Functions: "+Functions);*/
                 return null;
             }
 

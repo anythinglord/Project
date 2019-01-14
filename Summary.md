@@ -28,7 +28,8 @@
 
 	- Declaracion de variables y Funciones
 		
-		- Declaracion multiple
+		- Declaracion multiple de variables
+		- Declaracion de Funciones
 		- Guardar Variables locales
 		- Deteccion de Errores
 		
