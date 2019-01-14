@@ -424,8 +424,13 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
         System.out.println("comparison");
         if (ctx.expr(1) != null){
 
-            String expr0 = ctx.expr(0).getText();
-            String expr1 = ctx.expr(1).getText();
+            //String expr0 = ctx.expr(0).getText();
+            String expr0 = (String) visitExpr(ctx.expr(0));
+            //System.out.println("expr0: "+expr0);
+            //System.out.println("expr00: "+expr00);
+            //String expr1 = ctx.expr(1).getText();
+            String expr1 = (String) visitExpr(ctx.expr(1));
+            System.out.println("expr1: "+expr1);
             String comp  = ctx.comp_op(0).getText();
             Boolean ans = null;
 
@@ -510,7 +515,7 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
 
     @Override
     public T visitExpr(Python3Parser.ExprContext ctx) {
-        //System.out.println("Expr");
+        System.out.println("Expr");
         return (T)visitChildren(ctx);
     }
 
@@ -534,13 +539,26 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
 
     @Override
     public T visitArith_expr(Python3Parser.Arith_exprContext ctx) {
-        //System.out.println("arith-expr");
+        System.out.println("arith-expr");
         if(ctx.term().size()>1){
 
             double sum = 0;
-            for (int i = 0; i < ctx.term().size() ; i++) {
-                String term = (String) visitTerm(ctx.term(i));
-                System.out.println("TERM-------->: "+term);
+            for (int i = 0; i < ctx.term().size()-1 ; i++) {
+
+                if(i==0){
+                    String term = (String) visitTerm(ctx.term(0));
+                    if(isInt(term)||isDob(term))
+                        sum = Double.parseDouble(term);
+                    else{
+                        if(LocalVar.containsKey(term))
+                            sum =Double.parseDouble((String) LocalVar.get(term));
+                        else
+                            System.out.println(term+" is not defined");
+                    }
+                }
+
+                String term = (String) visitTerm(ctx.term(i+1));
+                //System.out.println("TERM-------->: "+term);
                 if(ctx.getText().contains("+")){
                     //if(term.charAt(0) >= 48 && term.charAt(0) <= 57 )
                     if(isInt(term)||isDob(term))
@@ -554,16 +572,22 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
                 }
                 else{
                     //if(term.charAt(0) >= 48 && term.charAt(0) <= 57 )
-                    if(isInt(term)||isDob(term))
+                    if(isInt(term)||isDob(term)){
                         sum -= Double.parseDouble(term);
+                        System.out.println("sum 1: "+sum);
+                    }
                     else{
-                        if(LocalVar.containsKey(term))
+                        System.out.println("term 2: "+term);
+                        if(LocalVar.containsKey(term)){
                             sum -=Double.parseDouble((String) LocalVar.get(term));
+                            System.out.println("sum 2: "+sum);
+                        }
                         else
                             System.out.println(term+" is not defined");
                     }
                 }
             }
+
             ident = "NUMBER";
             /*System.out.println("term 0:"+ctx.term(0).getText());
             System.out.println("term 1:"+ctx.term(1).getText());*/
@@ -574,9 +598,9 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
     }
     @Override
     public T visitTerm(Python3Parser.TermContext ctx) {
-        //System.out.println("Term");
+        System.out.println("Term");
         if(ctx.factor().size()>1){
-
+            System.out.println("mas factor");
             double mul = 1;
             for (int i = 0; i < ctx.factor().size() ; i++) {
 
