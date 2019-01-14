@@ -10,9 +10,27 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
     public static HashMap<String,Object> LocalVar = new HashMap<>();
     public static String ident = "";
 
+    private static boolean isInt(String cadena){
+        try {
+            Integer.parseInt(cadena);
+            return true;
+        } catch (NumberFormatException nfe){
+            return false;
+        }
+    }
+
+    private static boolean isDob(String cadena){
+        try {
+            Double.parseDouble(cadena);
+            return true;
+        } catch (NumberFormatException nfe){
+            return false;
+        }
+    }
+
     @Override
     public T visitSingle_input(Python3Parser.Single_inputContext ctx) {
-        System.out.println("single input");
+        //System.out.println("single input");
         return (T)visitChildren(ctx);
     }
 
@@ -78,21 +96,21 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
     }
 
     @Override public T visitSmall_stmt(Python3Parser.Small_stmtContext ctx) {
-        System.out.println("small stmt");
+        //System.out.println("small stmt");
         return (T)visitChildren(ctx);
     }
 
     @Override public T visitExpr_stmt(Python3Parser.Expr_stmtContext ctx) {
         System.out.println("expr stmt");
-        System.out.println("ctx ----->: "+ctx.getText());
+        //System.out.println("ctx ----->: "+ctx.getText());
         if(ctx.getText().contains("=")){
             String var = (String)visitTestlist_star_expr(ctx.testlist_star_expr(0));
-            System.out.println("VAR.---->: "+var);
+            //System.out.println("VAR.---->: "+var);
             String value = (String)visitTestlist_star_expr(ctx.testlist_star_expr(1));
             //System.out.println("VALUE.---->: "+value);
             Object a = value;
-            System.out.println("var: "+var+",value: "+value);
-            System.out.println("IDENT: "+ident);
+            //System.out.println("var: "+var+",value: "+value);
+            //System.out.println("IDENT: "+ident);
             if(ident.equals("ID")) {
                 if (LocalVar.get(value) == null)
                     System.out.println(value + " is not defined");
@@ -101,10 +119,9 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
 
             }else
                 LocalVar.put(var,a);
-
-            System.out.println("lo que hay en var: "+LocalVar.get(var));
+            //System.out.println("lo que hay en var: "+LocalVar.get(var));
         }else {
-            System.out.println("children of expr stmt");
+            //System.out.println("children of expr stmt");
             return (T) visitChildren(ctx);
         }
         return null;
@@ -116,7 +133,7 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
     }
 
     @Override public T visitTestlist_star_expr(Python3Parser.Testlist_star_exprContext ctx) {
-        System.out.println("Testlist star expr");
+        //System.out.println("Testlist star expr");
         return (T)visitChildren(ctx);
     }
 
@@ -211,7 +228,7 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
                     visitSuite(ctx.suite(0));
                 }else if(ctx.ELIF().size()>0){
                     for (int i = 0; i <ctx.ELIF().size(); i++) {
-                        System.out.println("ElIF number "+i);
+                        //System.out.println("ElIF number "+i);
                         op = (Boolean) visitTest(ctx.test(i));
                         if(op){
                             visitSuite(ctx.suite(i));
@@ -239,7 +256,22 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
 
     @Override
     public T visitWhile_stmt(Python3Parser.While_stmtContext ctx) {
-        return (T)visitChildren(ctx);
+        System.out.println("While_stmt");
+        if(ctx.WHILE()!=null){
+            Boolean op ;
+            if(visitTest(ctx.test())!=null){
+                op = (Boolean) visitTest(ctx.test());
+                while(op){
+                    visitSuite(ctx.suite(0));
+                    op = (Boolean) visitTest(ctx.test());
+                    if(!op)
+                        break;
+                }
+            }
+
+        }
+        //return (T)visitChildren(ctx);
+        return null;
     }
 
     @Override
@@ -252,7 +284,8 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
             //String u = (String) visitExprlist(ctx.exprlist());
             String rango = (String) visitTestlist(ctx.testlist());
             int f = 0;
-            if(rango.charAt(0)>=48 && rango.charAt(0)<= 57)
+            //isNumeric
+            if(isInt(rango))
                 f = Integer.parseInt(rango);
             else{
                 if(LocalVar.containsKey(rango))
@@ -301,8 +334,7 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
 
     @Override
     public T visitTest(Python3Parser.TestContext ctx) {
-        System.out.println("test");
-
+        //System.out.println("test");
         return (T)visitChildren(ctx);
     }
 
@@ -327,21 +359,22 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
 
     @Override
     public T visitOr_test(Python3Parser.Or_testContext ctx) {
-        System.out.println("Or test");
+        //System.out.println("Or test");
 
         return (T)visitChildren(ctx);
     }
 
     @Override
     public T visitAnd_test(Python3Parser.And_testContext ctx) {
-        System.out.println("And test");
+        //System.out.println("And test");
 
         return (T)visitChildren(ctx);
     }
+
     @Override
     public T visitNot_test(Python3Parser.Not_testContext ctx) {
 
-        System.out.println("Not test");
+        //System.out.println("Not test");
 
         if(ctx.NOT()!=null)
             return (T)visitNot_test(ctx.not_test());
@@ -376,7 +409,8 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
             Boolean ans = null;
 
             if (expr0.charAt(0)>=48 && expr0.charAt(0)<=57){
-                if (expr1.charAt(0)>=48 && expr1.charAt(0)<=57){
+                //if (expr1.charAt(0)>=48 && expr1.charAt(0)<=57){
+                if (isInt(expr1)){
                     double n1 = Double.parseDouble(expr0);
                     double n2 = Double.parseDouble(expr1);
                     System.out.println("Ambos Numeros");
@@ -394,7 +428,8 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
                 }
             }else{
                 //puede ser variable u otra cosa
-                if (expr1.charAt(0)>=48 && expr1.charAt(0)<=57){
+                //if (expr1.charAt(0)>=48 && expr1.charAt(0)<=57){
+                if (isInt(expr1)){
                     System.out.println("segundo numero el primero no");
                     double n2 = Double.parseDouble(expr1);
                     if(LocalVar.get(expr0)==null){
@@ -422,19 +457,19 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
 
                     }
                     else{
-                        double n1 = (double)LocalVar.get(expr0);
+                        double n1 = Double.parseDouble((String) LocalVar.get(expr0));
                         if(LocalVar.get(expr1) == null){
                             System.out.println(expr1+" is not defined");
                             return (T)null;
                         }else{
-                            double n2 = (double)LocalVar.get(expr1);
+                            double n2 = Double.parseDouble((String)LocalVar.get(expr1));
                             return (T)compare(n1,n2,comp);
                         }
                     }
                 }
             }
         }else{
-            System.out.println("not comparison of if");
+            //System.out.println("not comparison of if");
             return (T)visitChildren(ctx);
         }
         //return null;
@@ -454,26 +489,25 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
 
     @Override
     public T visitExpr(Python3Parser.ExprContext ctx) {
-        System.out.println("Expr");
-
+        //System.out.println("Expr");
         return (T)visitChildren(ctx);
     }
 
     @Override
     public T visitXor_expr(Python3Parser.Xor_exprContext ctx) {
-        System.out.println("Xor-expr");
+        //System.out.println("Xor-expr");
         return (T)visitChildren(ctx);
     }
 
     @Override
     public T visitAnd_expr(Python3Parser.And_exprContext ctx) {
-        System.out.println("And-expr");
+        //System.out.println("And-expr");
         return (T)visitChildren(ctx);
     }
 
     @Override
     public T visitShift_expr(Python3Parser.Shift_exprContext ctx) {
-        System.out.println("shift-expr");
+        //System.out.println("shift-expr");
         return (T)visitChildren(ctx);
     }
 
@@ -485,9 +519,10 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
             double sum = 0;
             for (int i = 0; i < ctx.term().size() ; i++) {
                 String term = (String) visitTerm(ctx.term(i));
-                //System.out.println("TERM-------->: "+term);
+                System.out.println("TERM-------->: "+term);
                 if(ctx.getText().contains("+")){
-                    if(term.charAt(0) >= 48 && term.charAt(0) <= 57 )
+                    //if(term.charAt(0) >= 48 && term.charAt(0) <= 57 )
+                    if(isInt(term)||isDob(term))
                         sum += Double.parseDouble(term);
                     else{
                         if(LocalVar.containsKey(term))
@@ -497,7 +532,8 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
                     }
                 }
                 else{
-                    if(term.charAt(0) >= 48 && term.charAt(0) <= 57 )
+                    //if(term.charAt(0) >= 48 && term.charAt(0) <= 57 )
+                    if(isInt(term)||isDob(term))
                         sum -= Double.parseDouble(term);
                     else{
                         if(LocalVar.containsKey(term))
@@ -524,9 +560,9 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
             for (int i = 0; i < ctx.factor().size() ; i++) {
 
                 String factor = (String) visitFactor(ctx.factor(i));
-                //System.out.println("FActor-------->: "+factor);
+                System.out.println("FActor-------->: "+factor);
                 if(ctx.getText().contains("*")){
-                    if(factor.charAt(0) >= 48 && factor.charAt(0) <= 57 )
+                    if(isInt(factor)||isDob(factor))
                         mul *= Double.parseDouble(factor);
                     else{
                         if(LocalVar.containsKey(factor))
@@ -537,7 +573,8 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
                 }
 
                 else if(ctx.getText().contains("/")){
-                    if(factor.charAt(0) >= 48 && factor.charAt(0) <= 57 )
+                    //if(factor.charAt(0) >= 48 && factor.charAt(0) <= 57 )
+                    if(isInt(factor)||isDob(factor))
                         mul /= Double.parseDouble(factor);
                     else{
                         if(LocalVar.containsKey(factor))
@@ -547,7 +584,9 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
                     }
                 }
                 else if(ctx.getText().contains("%")){
-                    if(factor.charAt(0) >= 48 && factor.charAt(0) <= 57 )
+
+                    //if(factor.charAt(0) >= 48 && factor.charAt(0) <= 57 )
+                    if(isInt(factor)||isDob(factor))
                         mul %= Double.parseDouble(factor);
                     else{
                         if(LocalVar.containsKey(factor))
@@ -568,13 +607,13 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
 
     @Override
     public T visitFactor(Python3Parser.FactorContext ctx) {
-        System.out.println("factor");
+        //System.out.println("factor");
         return (T)visitChildren(ctx);
     }
 
     @Override
     public T visitPower(Python3Parser.PowerContext ctx) {
-        System.out.println("power");
+        //System.out.println("power");
         return (T) visitChildren(ctx);
     }
 
@@ -582,7 +621,7 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
     public T visitAtom_expr(Python3Parser.Atom_exprContext ctx) {
         System.out.println("Atom_expr");
         if(ctx.trailer().size()>=1){
-            System.out.println("en el Trailer");
+            //System.out.println("en el Trailer");
             String fun = (String) visitAtom(ctx.atom());
             String cont = "";
             if (visitTrailer(ctx.trailer(0))==null)
@@ -634,18 +673,18 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
 
     @Override
     public T visitAtom(Python3Parser.AtomContext ctx) {
-        System.out.println("Atom");
+        //System.out.println("Atom");
         if(ctx.NAME()!=null){
-            System.out.println("ID");
+            //System.out.println("ID");
             ident = "ID";
             return (T)ctx.NAME().getText();
         }else if(ctx.NUMBER()!=null){
-            System.out.println("NUMBER");
+            //System.out.println("NUMBER");
             ident = "NUMBER";
             return (T)ctx.NUMBER().getText();
         }
         else if(ctx.STRING()!=null){
-            System.out.println("STRING");
+            //System.out.println("STRING");
             ident = "STRING";
             return (T)ctx.STRING(0).getText();
         }
