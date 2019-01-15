@@ -543,6 +543,14 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
         if(ctx.term().size()>1){
 
             double sum = 0;
+            boolean nulo = false;
+            ArrayList<String> signos = new ArrayList<>();
+            String word = ctx.getText();
+            for (int i = 0; i < word.length() ; i++) {
+                if(word.charAt(i)==43 || word.charAt(i)==45)
+                    signos.add(String.valueOf(word.charAt(i)));
+            }
+            //System.out.println("signos-------->: "+signos);
             for (int i = 0; i < ctx.term().size()-1 ; i++) {
 
                 if(i==0){
@@ -551,27 +559,37 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
                         sum = Double.parseDouble(term);
                     else{
                         if(LocalVar.containsKey(term))
-                            sum =Double.parseDouble((String) LocalVar.get(term));
-                        else
+                            sum = Double.parseDouble((String) LocalVar.get(term));
+                        else{
                             System.out.println(term+" is not defined");
+                            nulo = true;
+                        }
+
                     }
                 }
 
                 String term = (String) visitTerm(ctx.term(i+1));
+                System.out.println("Term---> "+term);
                 //System.out.println("TERM-------->: "+term);
-                if(ctx.getText().contains("+")){
+
+                //if(ctx.getText().contains("+")){
+                if(signos.get(i).equals("+")){
                     //if(term.charAt(0) >= 48 && term.charAt(0) <= 57 )
                     if(isInt(term)||isDob(term))
                         sum += Double.parseDouble(term);
                     else{
                         if(LocalVar.containsKey(term))
                             sum +=Double.parseDouble((String) LocalVar.get(term));
-                        else
+                        else{
                             System.out.println(term+" is not defined");
+                            nulo = true;
+                        }
+
                     }
                 }
                 else{
                     //if(term.charAt(0) >= 48 && term.charAt(0) <= 57 )
+                    System.out.println("resta");
                     if(isInt(term)||isDob(term)){
                         sum -= Double.parseDouble(term);
                         System.out.println("sum 1: "+sum);
@@ -582,16 +600,24 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
                             sum -=Double.parseDouble((String) LocalVar.get(term));
                             System.out.println("sum 2: "+sum);
                         }
-                        else
+                        else{
                             System.out.println(term+" is not defined");
+                            nulo = true;
+                        }
+
                     }
                 }
+                System.out.println("suma------->: "+sum);
             }
 
             ident = "NUMBER";
             /*System.out.println("term 0:"+ctx.term(0).getText());
             System.out.println("term 1:"+ctx.term(1).getText());*/
-            return (T)String.valueOf(sum);
+            if(nulo)
+                return null;
+            else
+                return (T)String.valueOf(sum);
+
         }else
             return (T)visitChildren(ctx);
 
@@ -599,14 +625,40 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
     @Override
     public T visitTerm(Python3Parser.TermContext ctx) {
         System.out.println("Term");
+
         if(ctx.factor().size()>1){
+
             System.out.println("mas factor");
             double mul = 1;
-            for (int i = 0; i < ctx.factor().size() ; i++) {
+            boolean nulo = false;
+            ArrayList<String> signos = new ArrayList<>();
+            String word = ctx.getText();
+            System.out.println("Word---------->: "+word);
+            for (int i = 0; i < word.length() ; i++) {
+                if(word.charAt(i)==42 || word.charAt(i)==47)
+                    signos.add(String.valueOf(word.charAt(i)));
+            }
+            //System.out.println("Signos---------->: "+signos);
+            for (int i = 0; i < ctx.factor().size()-1 ; i++) {
 
-                String factor = (String) visitFactor(ctx.factor(i));
-                System.out.println("FActor-------->: "+factor);
-                if(ctx.getText().contains("*")){
+                if(i==0){
+                    String term = (String) visitFactor(ctx.factor(0));
+                    if(isInt(term)||isDob(term))
+                        mul = Double.parseDouble(term);
+                    else{
+                        if(LocalVar.containsKey(term))
+                            mul = Double.parseDouble((String) LocalVar.get(term));
+                        else{
+                            System.out.println(term+" is not defined");
+                            nulo = true;
+                        }
+
+                    }
+                }
+
+                String factor = (String) visitFactor(ctx.factor(i+1));
+                //System.out.println("FActor-------->: "+factor);
+                if(signos.get(i).equals("*")){
                     if(isInt(factor)||isDob(factor))
                         mul *= Double.parseDouble(factor);
                     else{
@@ -617,7 +669,7 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
                     }
                 }
 
-                else if(ctx.getText().contains("/")){
+                else if(signos.get(i).equals("/")){
                     //if(factor.charAt(0) >= 48 && factor.charAt(0) <= 57 )
                     if(isInt(factor)||isDob(factor))
                         mul /= Double.parseDouble(factor);
@@ -628,7 +680,7 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
                             System.out.println(factor+" is not defined");
                     }
                 }
-                else if(ctx.getText().contains("%")){
+                else if(signos.get(i).equals("%")){
 
                     //if(factor.charAt(0) >= 48 && factor.charAt(0) <= 57 )
                     if(isInt(factor)||isDob(factor))
@@ -645,7 +697,11 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
             ident = "NUMBER";
             //System.out.println("term 0:"+ctx.term(0).getText());
             //System.out.println("term 1:"+ctx.term(1).getText());
-            return (T)String.valueOf(mul);
+            if(nulo)
+                return null;
+            else
+                return (T)String.valueOf(mul);
+
         }else
             return (T)visitChildren(ctx);
     }
@@ -675,6 +731,9 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
                 cont = (String) visitTrailer(ctx.trailer(0));
 
             //System.out.println("----->"+fun+" "+cont);
+            if (LocalVar.get(cont)==null)
+                return null;
+
             if(fun.equals("print")) {
                 switch (ident) {
                     case "ID":
@@ -703,7 +762,7 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
             else if(fun.equals("range")){
                 //System.out.println("is a range ----------------->");
                 return (T)visitArglist(ctx.trailer(0).arglist());
-            }else{
+            }else {
                 System.out.println("Funciones maybe!");
                 //System.out.println("fun: "+fun);
                 if(Functions.containsKey(fun)){
