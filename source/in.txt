@@ -1,0 +1,7 @@
+a = 512
+h = 256
+i = 1024/4 * 32*a
+print(i)
+print(a)
+print(h)
+

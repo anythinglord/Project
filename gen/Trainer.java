@@ -11,10 +11,10 @@ import java.io.IOException;
 public class Trainer {
     public static void main(String[] args) throws IOException {
 
-        Python2Lexer lexer = new Python2Lexer(CharStreams.fromFileName("/home/jesus/IdeaProjects/PsiCoder2/source/in.txt"));
+        Python3Lexer lexer = new Python3Lexer(CharStreams.fromFileName("/home/jesus/IdeaProjects/Project/source/in.txt"));
         CommonTokenStream tokens = new CommonTokenStream((TokenSource) lexer);
-        Python2Parser parser = new Python2Parser(tokens);
-        ParseTree tree = parser.single_input();
+        Python3Parser parser = new Python3Parser(tokens);
+        ParseTree tree = parser.file_input();
         MyVisitor<Object> loader = new MyVisitor<Object>();
         loader.visit(tree);
         //System.out.println(tree);

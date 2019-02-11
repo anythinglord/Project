@@ -212,10 +212,8 @@ subscript       : test | (test)? ':' (test)? (sliceop)?;
 sliceop         : ':' (test)?;
 exprlist        : (expr|star_expr) (',' (expr|star_expr))* (',')?;
 testlist        : test (',' test)* (',')?;
-dictorsetmaker  : ( ((test ':' test | '**' expr)
-                   (comp_for | (',' (test ':' test | '**' expr))* (',')?)) |
-                  ((test | star_expr)
-                   (comp_for | (',' (test | star_expr))* (',')?)) );
+dictorsetmaker  : (((test ':' test | '**' expr)(comp_for | (',' (test ':' test | '**' expr))* (',')?))
+                | ((test | star_expr)(comp_for | (',' (test | star_expr))* (',')?)) );
 
 classdef    : 'class' NAME ('(' (arglist)? ')')? ':' suite;
 arglist     : argument (',' argument)*  (',')?;

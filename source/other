@@ -1,0 +1,15 @@
+if 4 > 5 :
+    a = 4
+elif 4 == 4:
+    a = 8
+elif 6 > 7:
+    b = 7
+else:
+    a = 5
+
+
+ID
+STRING
+ID
+ID
+
