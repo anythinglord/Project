@@ -8,13 +8,20 @@ import java.util.HashMap;
 // realizado por Samael Salcedo y Camilo Nieto
 public class MyVisitor<T> extends Python3BaseVisitor<T> {
 
+    ArrayList<String> vars = new ArrayList<>();
+    static int CamelCase = 0;
+    static int all = 0;
+    static int small = 0;
+
     @Override
     public T visitSingle_input(Python3Parser.Single_inputContext ctx) {
+        System.out.println("Single_input");
         return visitChildren(ctx);
     }
 
     @Override
     public T visitFile_input(Python3Parser.File_inputContext ctx) {
+        System.out.println("File_input");
         return visitChildren(ctx);
     }
 
@@ -47,7 +54,15 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
-    @Override public T visitFuncdef(Python3Parser.FuncdefContext ctx) { return visitChildren(ctx); }
+    @Override public T visitFuncdef(Python3Parser.FuncdefContext ctx) {
+        System.out.println("Funcdef");
+        //System.out.println("NAMe: " + ctx.NAME().getText());
+        String name = ctx.NAME().getText();
+        //return visitChildren(ctx);
+        Type(name);
+        return null;
+
+    }
     /**
      * {@inheritDoc}
      *
@@ -96,21 +111,41 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
-    @Override public T visitSimple_stmt(Python3Parser.Simple_stmtContext ctx) { return visitChildren(ctx); }
+    @Override public T visitSimple_stmt(Python3Parser.Simple_stmtContext ctx) {
+        System.out.println("Simple_stmt");
+        return visitChildren(ctx);
+    }
     /**
      * {@inheritDoc}
      *
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
-    @Override public T visitSmall_stmt(Python3Parser.Small_stmtContext ctx) { return visitChildren(ctx); }
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
-    @Override public T visitExpr_stmt(Python3Parser.Expr_stmtContext ctx) { return visitChildren(ctx); }
+    @Override public T visitSmall_stmt(Python3Parser.Small_stmtContext ctx) {
+        System.out.println("Small_stmt");
+        return visitChildren(ctx);
+    }
+    static void Type (String var){
+        if(var.matches("[A-Z].*[a-z].*") || var.matches("[a-z].*[A-Z].*")){
+            System.out.println("CamelCase");
+            CamelCase++;
+        }else if(var.matches("[A-Z].*")){
+            System.out.println("All_caps");
+            all++;
+        }else if(var.matches("[a-z].*")){
+            System.out.println("Small_caps");
+            small++;
+        };
+    }
+
+    @Override public T visitExpr_stmt(Python3Parser.Expr_stmtContext ctx) {
+        System.out.println("Expr_stmt");
+        String var = (String)visitTestlist_star_expr(ctx.testlist_star_expr(0));
+        //System.out.println("VAR: "+var);
+        Type(var);
+        //return visitChildren(ctx);
+        return null;
+    }
     /**
      * {@inheritDoc}
      *
@@ -124,7 +159,11 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
-    @Override public T visitTestlist_star_expr(Python3Parser.Testlist_star_exprContext ctx) { return visitChildren(ctx); }
+    @Override public T visitTestlist_star_expr(Python3Parser.Testlist_star_exprContext ctx) {
+        System.out.println("Testlist_star_expr");
+
+        return visitChildren(ctx);
+    }
     /**
      * {@inheritDoc}
      *
@@ -341,7 +380,10 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
-    @Override public T visitTest(Python3Parser.TestContext ctx) { return visitChildren(ctx); }
+    @Override public T visitTest(Python3Parser.TestContext ctx) {
+        System.out.println("Test");
+        return visitChildren(ctx);
+    }
     /**
      * {@inheritDoc}
      *
@@ -390,7 +432,10 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
-    @Override public T visitComparison(Python3Parser.ComparisonContext ctx) { return visitChildren(ctx); }
+    @Override public T visitComparison(Python3Parser.ComparisonContext ctx) {
+        System.out.println("Comparison");
+        return visitChildren(ctx);
+    }
     /**
      * {@inheritDoc}
      *
@@ -411,7 +456,10 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
-    @Override public T visitExpr(Python3Parser.ExprContext ctx) { return visitChildren(ctx); }
+    @Override public T visitExpr(Python3Parser.ExprContext ctx) {
+        System.out.println("Expr");
+        return visitChildren(ctx);
+    }
     /**
      * {@inheritDoc}
      *
@@ -474,7 +522,26 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
-    @Override public T visitAtom(Python3Parser.AtomContext ctx) { return visitChildren(ctx); }
+    @Override public T visitAtom(Python3Parser.AtomContext ctx) {
+        System.out.println("Atom");
+        if(ctx.NAME()!=null){
+            //System.out.println("ID");
+            //ident = "ID";
+            return (T)ctx.NAME().getText();
+        }else if(ctx.NUMBER()!=null){
+            //System.out.println("NUMBER");
+            //ident = "NUMBER";
+            return (T)ctx.NUMBER().getText();
+        }
+        else if(ctx.STRING()!=null){
+            //System.out.println("STRING");
+            //ident = "STRING";
+            return (T)ctx.STRING(0).getText();
+        }
+        else{
+            return (T)visitChildren(ctx);
+        }
+    }
     /**
      * {@inheritDoc}
      *
@@ -488,7 +555,10 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
-    @Override public T visitTrailer(Python3Parser.TrailerContext ctx) { return visitChildren(ctx); }
+    @Override public T visitTrailer(Python3Parser.TrailerContext ctx) {
+        System.out.println("Trailer");
+        return visitChildren(ctx);
+    }
     /**
      * {@inheritDoc}
      *
