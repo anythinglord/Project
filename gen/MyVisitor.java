@@ -1,12 +1,26 @@
 import org.antlr.v4.runtime.misc.ObjectEqualityComparator;
 import org.stringtemplate.v4.ST;
 
-import java.sql.SQLOutput;
+import java.io.*;
 import java.util.ArrayList;
+import java.sql.SQLOutput;
 import java.util.HashMap;
 
 // realizado por Samael Salcedo y Camilo Nieto
 public class MyVisitor<T> extends Python3BaseVisitor<T> {
+
+    //Variables para las bases de datos de las palabras
+    private HashMap<String, String> db_abreviations = new HashMap<>();
+    private HashMap<String, String> db_spanish = new HashMap<>();
+    private HashMap<String, String> db_english = new HashMap<>();
+    private HashMap<String, Integer> db_posible_words = new HashMap<>();
+    private HashMap<String, String> db_users = new HashMap<>();
+
+    //Analisis de palabras
+    private int english_words = 0;
+    private int spanish_words = 0;
+    private int abreviations_words = 0;
+    private int other_words = 0;
 
     ArrayList<String> vars = new ArrayList<>();
     static int CamelCase = 0;
@@ -19,9 +33,77 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
         return visitChildren(ctx);
     }
 
+    private void fillDb( String path, HashMap db ){
+        File file = new File( path );
+        FileReader fileR;
+        BufferedReader file2 = null;
+
+        try {
+            fileR = new FileReader(file);
+            file2 = new BufferedReader(fileR);
+
+
+        } catch (FileNotFoundException e) {
+            System.out.println("No se encontro el archivo "+file.getName());
+        }
+
+        try {
+            String lines;
+            while( ( lines = file2.readLine()) != null ) {
+                db.put(lines, lines);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void wordAnalysis( String word ){
+        if( english_words >= spanish_words ) {
+            if( db_english.containsKey( word ) )
+                english_words += 1;
+            else if( db_spanish.containsKey( word ) )
+                spanish_words += 1;
+            else if( db_abreviations.containsKey( word ) )
+                abreviations_words += 1;
+            else {
+                other_words += 1;
+                toAddNewWord( word );
+            }
+        }
+    }
+
+    private void toAddNewWord( String word ){
+
+        writeInDbTxt( "db/posible_words_db", word );
+
+        if( db_posible_words.containsKey( word ) )
+            db_posible_words.put( word, db_posible_words.get(word)+1 );
+        else
+            db_posible_words.put( word, 1 );
+    }
+
+    private void writeInDbTxt( String path, String word ){
+        FileWriter file = null;
+        try {
+            file = new FileWriter(path, true);
+            PrintWriter filePw = new PrintWriter(file);
+
+            filePw.write( word );
+
+            file.close();
+        } catch (IOException e){
+            System.out.println("No se encontro el archivo "+file.getEncoding());
+        }
+    }
+
     @Override
     public T visitFile_input(Python3Parser.File_inputContext ctx) {
         System.out.println("File_input");
+
+        fillDb( "db/abreviation_words_db", db_abreviations );
+        fillDb( "db/english_words_db", db_english );
+        fillDb( "db/spanish_words_db", db_spanish );
+
         return visitChildren(ctx);
     }
 

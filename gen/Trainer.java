@@ -11,7 +11,7 @@ import java.io.IOException;
 public class Trainer {
     public static void main(String[] args) throws IOException {
 
-        Python3Lexer lexer = new Python3Lexer(CharStreams.fromFileName("/home/jesus/IdeaProjects/Project/source/in.txt"));
+        Python3Lexer lexer = new Python3Lexer(CharStreams.fromFileName("source/in.txt"));
         CommonTokenStream tokens = new CommonTokenStream((TokenSource) lexer);
         Python3Parser parser = new Python3Parser(tokens);
         ParseTree tree = parser.file_input();
