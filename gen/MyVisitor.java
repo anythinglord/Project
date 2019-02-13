@@ -10,30 +10,36 @@ import java.util.HashMap;
 public class MyVisitor<T> extends Python3BaseVisitor<T> {
 
     //Variables para las bases de datos de las palabras
-    private HashMap<String, String> db_abreviations = new HashMap<>();
-    private HashMap<String, String> db_spanish = new HashMap<>();
-    private HashMap<String, String> db_english = new HashMap<>();
+    private HashMap<String, Integer> db_abreviations = new HashMap<>();
+    private HashMap<String, Integer> db_spanish = new HashMap<>();
+    private HashMap<String, Integer> db_english = new HashMap<>();
     private HashMap<String, Integer> db_posible_words = new HashMap<>();
+    private HashMap<String, Integer> db_other_words = new HashMap<>();
     private HashMap<String, String> db_users = new HashMap<>();
 
     //Analisis de palabras
-    private int english_words = 0;
-    private int spanish_words = 0;
-    private int abreviations_words = 0;
-    private int other_words = 0;
+    private int english_words_cont;
+    private int spanish_words_cont;
+    private int abreviations_words_cont;
+    private int other_words_cont;
+    private int complete_words_cont;
+    private int uncomplete_words_cont;
+
+    //Analisis condicionales
+    private int if_cont;
+    private int switch_cont;
+
+    //Analisis bucles
+    private int for_cont;
+    private int while_cont;
+    private int lambda_cont;
 
     ArrayList<String> vars = new ArrayList<>();
     static int CamelCase = 0;
     static int all = 0;
     static int small = 0;
 
-    @Override
-    public T visitSingle_input(Python3Parser.Single_inputContext ctx) {
-        System.out.println("Single_input");
-        return visitChildren(ctx);
-    }
-
-    private void fillDb( String path, HashMap db ){
+    private void readDb( String path, HashMap<String, Integer> db ){
         File file = new File( path );
         FileReader fileR;
         BufferedReader file2 = null;
@@ -50,39 +56,17 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
         try {
             String lines;
             while( ( lines = file2.readLine()) != null ) {
-                db.put(lines, lines);
+                if( db.containsKey( lines ) )
+                    db.put( lines, db.get( lines ) + 1);
+                else
+                    db.put( lines, 1 );
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void wordAnalysis( String word ){
-        if( english_words >= spanish_words ) {
-            if( db_english.containsKey( word ) )
-                english_words += 1;
-            else if( db_spanish.containsKey( word ) )
-                spanish_words += 1;
-            else if( db_abreviations.containsKey( word ) )
-                abreviations_words += 1;
-            else {
-                other_words += 1;
-                toAddNewWord( word );
-            }
-        }
-    }
-
-    private void toAddNewWord( String word ){
-
-        writeInDbTxt( "db/posible_words_db", word );
-
-        if( db_posible_words.containsKey( word ) )
-            db_posible_words.put( word, db_posible_words.get(word)+1 );
-        else
-            db_posible_words.put( word, 1 );
-    }
-
-    private void writeInDbTxt( String path, String word ){
+    private void writeDb( String path, String word ){
         FileWriter file = null;
         try {
             file = new FileWriter(path, true);
@@ -96,13 +80,90 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
         }
     }
 
+    //Función que analisara las palabras de los nombres agregando a las variables
+    private void wordAnalysis( String word ){
+        if( db_abreviations.containsKey( word ) ){
+            abreviations_words_cont += 1;
+            uncomplete_words_cont += 1;
+        } else if( db_english.containsKey( word ) ){
+            english_words_cont += 1;
+            complete_words_cont += 1;
+        } else if( db_spanish.containsKey( word ) ){
+            spanish_words_cont += 1;
+            complete_words_cont += 1;
+        } else if( db_other_words.containsKey( word ) ){
+            other_words_cont += 1;
+            complete_words_cont += 1;
+        } else if( db_posible_words.containsKey( word ) ){
+            other_words_cont += 1;
+            uncomplete_words_cont += 1;
+
+            lookPosibleToOther( word );
+
+        } else {
+            other_words_cont += 1;
+            uncomplete_words_cont += 1;
+
+            addToPosible( word );
+        }
+    }
+
+    private void addToPosible( String word ){
+
+        db_posible_words.put( word, 1 );
+        writeDb( "db/posible_words_db", word );
+
+        wordAnalysis( word );
+
+    }
+
+    private void lookPosibleToOther( String word ){
+
+        if( db_posible_words.get( word ) >= 10 && !db_other_words.containsKey( word ) ){
+            db_other_words.put( word, 1 );
+            writeDb( "db/other_words_db", word );
+        } else {
+            db_posible_words.put( word, db_posible_words.get( word )+1 );
+            writeDb( "db/posible_words_db", word );
+        }
+
+    }
+
+    //Función donde se inicializara las variables para el analisis del codigo.
+    //Se inicializaran todas las variables que requieran un valor por defecto cuando se introdusca un codigo nuevo
+    private void initializeVariables(){
+        english_words_cont = 0;
+        spanish_words_cont = 0;
+        abreviations_words_cont = 0;
+        other_words_cont = 0;
+        complete_words_cont = 0;
+        uncomplete_words_cont = 0;
+
+        if_cont = 0;
+        switch_cont = 0;
+
+        for_cont = 0;
+        while_cont = 0;
+        lambda_cont = 0;
+
+        readDb( "db/abreviation_words_db", db_abreviations );
+        readDb( "db/english_words_db", db_english );
+        readDb( "db/spanish_words_db", db_spanish );
+        readDb( "db/other_words_db", db_other_words );
+        readDb( "db/posible_words_db", db_posible_words );
+    }
+
+    @Override
+    public T visitSingle_input(Python3Parser.Single_inputContext ctx) {
+        System.out.println("Single_input");
+        return visitChildren(ctx);
+    }
+
     @Override
     public T visitFile_input(Python3Parser.File_inputContext ctx) {
         System.out.println("File_input");
 
-        fillDb( "db/abreviation_words_db", db_abreviations );
-        fillDb( "db/english_words_db", db_english );
-        fillDb( "db/spanish_words_db", db_spanish );
+        initializeVariables();
 
         return visitChildren(ctx);
     }
@@ -406,7 +467,10 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
-    @Override public T visitIf_stmt(Python3Parser.If_stmtContext ctx) { return visitChildren(ctx); }
+    @Override public T visitIf_stmt(Python3Parser.If_stmtContext ctx) {
+
+        return visitChildren(ctx);
+    }
     /**
      * {@inheritDoc}
      *
