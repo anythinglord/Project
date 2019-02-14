@@ -6,7 +6,9 @@ import java.util.ArrayList;
 import java.sql.SQLOutput;
 import java.util.HashMap;
 
+// Analisis Estilografico realizado para el codigo de Python 3
 // realizado por Samael Salcedo y Camilo Nieto
+
 public class MyVisitor<T> extends Python3BaseVisitor<T> {
 
     //Variables para las bases de datos de las palabras
@@ -18,12 +20,17 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
     private HashMap<String, String> db_users = new HashMap<>();
 
     //Analisis de palabras
-    private int english_words_cont;
-    private int spanish_words_cont;
-    private int abreviations_words_cont;
-    private int other_words_cont;
-    private int complete_words_cont;
-    private int uncomplete_words_cont;
+    static int english_words_cont;
+    static int spanish_words_cont;
+    static int abreviations_words_cont;
+    static int other_words_cont;
+    static int complete_words_cont;
+    static int uncomplete_words_cont;
+    static int Ucamel_case_cont;
+    static int Lcamel_case_cont;
+    static int all_caps_count;
+    static int small_caps_count;
+    static int numlines ;
 
     //Analisis condicionales
     private int if_cont;
@@ -34,11 +41,8 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
     private int while_cont;
     private int lambda_cont;
 
-    ArrayList<String> vars = new ArrayList<>();
-    static int CamelCase = 0;
-    static int all = 0;
-    static int small = 0;
-
+    // Funcion que se utiliza para leer las palabras de la base de datos
+    // Las palabras son guardadas en un Diccionario
     private void readDb( String path, HashMap<String, Integer> db ){
         File file = new File( path );
         FileReader fileR;
@@ -72,7 +76,8 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
             file = new FileWriter(path, true);
             PrintWriter filePw = new PrintWriter(file);
 
-            filePw.write( word );
+            filePw.write( word +"\n" );
+
 
             file.close();
         } catch (IOException e){
@@ -80,30 +85,35 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
         }
     }
 
-    //Función que analisara las palabras de los nombres agregando a las variables
+    //Función que analizara las palabras de los nombres agregando a las variables
     private void wordAnalysis( String word ){
+
         if( db_abreviations.containsKey( word ) ){
             abreviations_words_cont += 1;
             uncomplete_words_cont += 1;
-        } else if( db_english.containsKey( word ) ){
+
+        }else if( db_english.containsKey( word ) ){
             english_words_cont += 1;
             complete_words_cont += 1;
+
         } else if( db_spanish.containsKey( word ) ){
             spanish_words_cont += 1;
             complete_words_cont += 1;
+
         } else if( db_other_words.containsKey( word ) ){
             other_words_cont += 1;
             complete_words_cont += 1;
+
         } else if( db_posible_words.containsKey( word ) ){
+            //System.out.println("else if: "+word);
             other_words_cont += 1;
             uncomplete_words_cont += 1;
-
-            lookPosibleToOther( word );
+            //lookPosibleToOther( word );
 
         } else {
+            System.out.println("else: "+word);
             other_words_cont += 1;
             uncomplete_words_cont += 1;
-
             addToPosible( word );
         }
     }
@@ -112,13 +122,64 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
 
         db_posible_words.put( word, 1 );
         writeDb( "db/posible_words_db", word );
-
-        wordAnalysis( word );
+        //wordAnalysis( word );
 
     }
 
-    private void lookPosibleToOther( String word ){
+    private void StyleAnalysis( String word){
 
+        if(word.matches("[A-Z].*[a-z].*") ){
+            //System.out.println("UCamelCase");
+            Ucamel_case_cont++;
+            int aux = 0;
+            for (int i = 1; i < word.length() ; i++) {
+
+                String letter = String.valueOf(word.charAt(i)) ;
+                if(letter.matches("[A-Z].*")){
+                    //System.out.println(word.substring(aux,i));
+                    wordAnalysis(word.substring(aux,i).toLowerCase());
+                    aux = i;
+                }else if(i == word.length()-1)
+                    wordAnalysis(word.substring(aux,i+1).toLowerCase());
+
+            }
+
+        }else if(word.matches("[a-z].*[A-Z].*")){
+            System.out.println("LCamelCase");
+            Lcamel_case_cont++;
+            int aux = 0;
+            for (int i = 1; i < word.length() ; i++) {
+
+                String letter = String.valueOf(word.charAt(i)) ;
+                if(letter.matches("[A-Z].*")){
+                    //System.out.println(word.substring(aux,i).toLowerCase());
+                    wordAnalysis(word.substring(aux,i).toLowerCase());
+                    aux = i;
+                }else if(i == word.length()-1){
+                    //System.out.println(word.substring(aux,i+1).toLowerCase());
+                    wordAnalysis(word.substring(aux,i+1).toLowerCase());
+                }
+
+
+            }
+
+        }else if(word.matches("[A-Z].*")){
+            //System.out.println("All_caps");
+            all_caps_count++;
+
+        }else if(word.matches("[a-z].*")){
+            //System.out.println("Small_caps");
+            small_caps_count++;
+
+        };
+    }
+
+
+
+
+    /*private void lookPosibleToOther( String word ){
+
+        System.out.println(db_posible_words);
         if( db_posible_words.get( word ) >= 10 && !db_other_words.containsKey( word ) ){
             db_other_words.put( word, 1 );
             writeDb( "db/other_words_db", word );
@@ -127,17 +188,23 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
             writeDb( "db/posible_words_db", word );
         }
 
-    }
+    }*/
 
     //Función donde se inicializara las variables para el analisis del codigo.
     //Se inicializaran todas las variables que requieran un valor por defecto cuando se introdusca un codigo nuevo
     private void initializeVariables(){
+
         english_words_cont = 0;
         spanish_words_cont = 0;
         abreviations_words_cont = 0;
         other_words_cont = 0;
         complete_words_cont = 0;
         uncomplete_words_cont = 0;
+
+        Ucamel_case_cont = 0;
+        Lcamel_case_cont = 0;
+        all_caps_count = 0;
+        small_caps_count = 0;
 
         if_cont = 0;
         switch_cont = 0;
@@ -155,14 +222,14 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
 
     @Override
     public T visitSingle_input(Python3Parser.Single_inputContext ctx) {
-        System.out.println("Single_input");
+        //System.out.println("Single_input");
         return visitChildren(ctx);
     }
 
     @Override
     public T visitFile_input(Python3Parser.File_inputContext ctx) {
-        System.out.println("File_input");
-
+        //System.out.println("File_input");
+        numlines = ctx.stmt().size();
         initializeVariables();
 
         return visitChildren(ctx);
@@ -183,110 +250,82 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
         return visitChildren(ctx);
     }
 
-    @Override public T visitDecorated(Python3Parser.DecoratedContext ctx) { return visitChildren(ctx); }
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
-    @Override public T visitAsync_funcdef(Python3Parser.Async_funcdefContext ctx) { return visitChildren(ctx); }
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
-    @Override public T visitFuncdef(Python3Parser.FuncdefContext ctx) {
-        System.out.println("Funcdef");
-        //System.out.println("NAMe: " + ctx.NAME().getText());
+    @Override
+    public T visitDecorated(Python3Parser.DecoratedContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitAsync_funcdef(Python3Parser.Async_funcdefContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitFuncdef(Python3Parser.FuncdefContext ctx) {
+        //System.out.println("Funcdef");
         String name = ctx.NAME().getText();
-        //return visitChildren(ctx);
-        Type(name);
+        // Analisis al nombre de las funciones
+        StyleAnalysis(name);
+        String params = ctx.parameters().getText();
+        String [] parametros = params.substring(1,params.length()-1).split(",");
+        for (int i = 0; i < parametros.length ; i++) {
+            // Analisis a los parametros de las funciones
+            StyleAnalysis(parametros[i]);
+        }
+
+
         return null;
 
     }
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
-    @Override public T visitParameters(Python3Parser.ParametersContext ctx) { return visitChildren(ctx); }
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
-    @Override public T visitTypedargslist(Python3Parser.TypedargslistContext ctx) { return visitChildren(ctx); }
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
-    @Override public T visitTfpdef(Python3Parser.TfpdefContext ctx) { return visitChildren(ctx); }
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
-    @Override public T visitVarargslist(Python3Parser.VarargslistContext ctx) { return visitChildren(ctx); }
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
-    @Override public T visitVfpdef(Python3Parser.VfpdefContext ctx) { return visitChildren(ctx); }
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
-    @Override public T visitStmt(Python3Parser.StmtContext ctx) { return visitChildren(ctx); }
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
-    @Override public T visitSimple_stmt(Python3Parser.Simple_stmtContext ctx) {
-        System.out.println("Simple_stmt");
+
+    @Override
+    public T visitParameters(Python3Parser.ParametersContext ctx) {
         return visitChildren(ctx);
-    }
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
-    @Override public T visitSmall_stmt(Python3Parser.Small_stmtContext ctx) {
-        System.out.println("Small_stmt");
-        return visitChildren(ctx);
-    }
-    static void Type (String var){
-        if(var.matches("[A-Z].*[a-z].*") || var.matches("[a-z].*[A-Z].*")){
-            System.out.println("CamelCase");
-            CamelCase++;
-        }else if(var.matches("[A-Z].*")){
-            System.out.println("All_caps");
-            all++;
-        }else if(var.matches("[a-z].*")){
-            System.out.println("Small_caps");
-            small++;
-        };
     }
 
+    @Override
+    public T visitTypedargslist(Python3Parser.TypedargslistContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public T visitTfpdef(Python3Parser.TfpdefContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public T visitVarargslist(Python3Parser.VarargslistContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public T visitVfpdef(Python3Parser.VfpdefContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public T visitStmt(Python3Parser.StmtContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public T visitSimple_stmt(Python3Parser.Simple_stmtContext ctx) {
+        //System.out.println("Simple_stmt");
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public T visitSmall_stmt(Python3Parser.Small_stmtContext ctx) {
+        //System.out.println("Small_stmt");
+        return visitChildren(ctx);
+    }
+
+
+
     @Override public T visitExpr_stmt(Python3Parser.Expr_stmtContext ctx) {
-        System.out.println("Expr_stmt");
-        String var = (String)visitTestlist_star_expr(ctx.testlist_star_expr(0));
-        //System.out.println("VAR: "+var);
-        Type(var);
-        //return visitChildren(ctx);
+        //System.out.println("Expr_stmt");
+
+        String variable = (String)visitTestlist_star_expr(ctx.testlist_star_expr(0));
+        // Se analiza el estilo de la variable
+        StyleAnalysis(variable);
+
+
         return null;
     }
     /**
@@ -303,7 +342,7 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
      * {@link #visitChildren} on {@code ctx}.</p>
      */
     @Override public T visitTestlist_star_expr(Python3Parser.Testlist_star_exprContext ctx) {
-        System.out.println("Testlist_star_expr");
+        //System.out.println("Testlist_star_expr");
 
         return visitChildren(ctx);
     }
@@ -527,7 +566,7 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
      * {@link #visitChildren} on {@code ctx}.</p>
      */
     @Override public T visitTest(Python3Parser.TestContext ctx) {
-        System.out.println("Test");
+        //System.out.println("Test");
         return visitChildren(ctx);
     }
     /**
@@ -579,7 +618,7 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
      * {@link #visitChildren} on {@code ctx}.</p>
      */
     @Override public T visitComparison(Python3Parser.ComparisonContext ctx) {
-        System.out.println("Comparison");
+        //System.out.println("Comparison");
         return visitChildren(ctx);
     }
     /**
@@ -603,7 +642,7 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
      * {@link #visitChildren} on {@code ctx}.</p>
      */
     @Override public T visitExpr(Python3Parser.ExprContext ctx) {
-        System.out.println("Expr");
+        //System.out.println("Expr");
         return visitChildren(ctx);
     }
     /**
@@ -669,7 +708,7 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
      * {@link #visitChildren} on {@code ctx}.</p>
      */
     @Override public T visitAtom(Python3Parser.AtomContext ctx) {
-        System.out.println("Atom");
+        //System.out.println("Atom");
         if(ctx.NAME()!=null){
             //System.out.println("ID");
             //ident = "ID";
@@ -753,61 +792,51 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
-    @Override public T visitClassdef(Python3Parser.ClassdefContext ctx) { return visitChildren(ctx); }
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
-    @Override public T visitArglist(Python3Parser.ArglistContext ctx) { return visitChildren(ctx); }
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
-    @Override public T visitArgument(Python3Parser.ArgumentContext ctx) { return visitChildren(ctx); }
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
-    @Override public T visitComp_iter(Python3Parser.Comp_iterContext ctx) { return visitChildren(ctx); }
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
-    @Override public T visitComp_for(Python3Parser.Comp_forContext ctx) { return visitChildren(ctx); }
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
-    @Override public T visitComp_if(Python3Parser.Comp_ifContext ctx) { return visitChildren(ctx); }
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
-    @Override public T visitEncoding_decl(Python3Parser.Encoding_declContext ctx) { return visitChildren(ctx); }
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
-    @Override public T visitYield_expr(Python3Parser.Yield_exprContext ctx) { return visitChildren(ctx); }
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
-    @Override public T visitYield_arg(Python3Parser.Yield_argContext ctx) { return visitChildren(ctx); }
+    @Override
+    public T visitClassdef(Python3Parser.ClassdefContext ctx) {
+        System.out.println("Classdef");
+        String Name = ctx.NAME().getText();
+        StyleAnalysis(Name);
+        return visitChildren(ctx);
+    }
+    @Override
+    public T visitArglist(Python3Parser.ArglistContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public T visitArgument(Python3Parser.ArgumentContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public T visitComp_iter(Python3Parser.Comp_iterContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public T visitComp_for(Python3Parser.Comp_forContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public T visitComp_if(Python3Parser.Comp_ifContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public T visitEncoding_decl(Python3Parser.Encoding_declContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public T visitYield_expr(Python3Parser.Yield_exprContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public T visitYield_arg(Python3Parser.Yield_argContext ctx) {
+        return visitChildren(ctx);
+    }
+
 }
