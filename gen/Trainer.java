@@ -5,9 +5,7 @@ import org.antlr.v4.runtime.tree.*;
 
 import java.io.*;
 import java.sql.SQLOutput;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Scanner;
+import java.util.*;
 
 public class Trainer {
 
@@ -16,14 +14,17 @@ public class Trainer {
     static HashMap<String, ArrayList<Double>> users = new HashMap<>();
     static MyVisitor mv = new MyVisitor();
 
+
     public void InPut(){
 
-        System.out.println("Analizador Estilografico >[Python 3]<");
+        System.out.println("Analizador Estilografico [Python 3]");
         Scanner sc = new Scanner(System.in);
         System.out.print("Ingrese su Nombre: ");
         name = sc.nextLine();
         System.out.println();
     }
+
+    // leer el archivo de los usuarios
     public void Read(HashMap<String, ArrayList<Double>> db ){
 
         File file = new File("db/users_db");
@@ -41,7 +42,6 @@ public class Trainer {
         try {
             String linea;
             while((linea=file2.readLine())!=null){
-                //System.out.println("linea.- "+linea);
 
                 if(linea.contains(":")){
                     String [] user = linea.split(":");
@@ -59,7 +59,10 @@ public class Trainer {
             e.printStackTrace();
         }
     }
+
+    // Guarda en la db los datos de los usuarios
     public void WriteOut(){
+        //System.out.println("Write---");
         FileWriter file = null;
         try {
             file = new FileWriter("db/users_db", true);
@@ -80,14 +83,18 @@ public class Trainer {
             System.out.println("No se encontro el archivo "+file.getEncoding());
         }
     }
+
+    // Calcula las Estadisticas de cada usuario
     public void Calstats(){
 
-        // Porcetajes
-        float perUcamel = (float) mv.Ucamel_case_cont/mv.numlines;
-        float perLcamel = (float) mv.Lcamel_case_cont/mv.numlines;
-        float perAllcaps = (float) mv.all_caps_count/mv.numlines;
-        float perSmallcaps = (float) mv.small_caps_count/mv.numlines;
+        // Estadisticas
+        int total = mv.Ucamel_case_cont + mv.Lcamel_case_cont + mv.all_caps_count + mv.small_caps_count;
+        float perUcamel = (float) mv.Ucamel_case_cont/total;
+        float perLcamel = (float) mv.Lcamel_case_cont/total;
+        float perAllcaps = (float) mv.all_caps_count/total;
+        float perSmallcaps = (float) mv.small_caps_count/total;
 
+        System.out.println("Número de Lineas: "+mv.numlines);
         System.out.println("Upper Camel Case: "+String.format("%.2f", perUcamel*100)+"%");
         double perUcamelF = (double) Math.round(perUcamel * 100d) / 100d;
         stats.add(perUcamelF);
@@ -103,8 +110,14 @@ public class Trainer {
         System.out.println("Small Caps: "+String.format("%.2f",perSmallcaps*100)+"%");
         double perSmallcapsF = (double) Math.round(perSmallcaps * 100d) / 100d;
         stats.add(perSmallcapsF);
+
         System.out.println();
+
         // Cantidades
+        System.out.println("Cantidad de Sentencias if: "+mv.if_cont);
+        System.out.println("Cantidad de ciclos While: "+mv.while_cont);
+        System.out.println("Cantidad de ciclos For: "+mv.for_cont);
+        System.out.println("Programacion Funcional: "+mv.lambda_exist+" cantidad: "+mv.lambda_cont);
         System.out.println("Palabras en Español: "+mv.spanish_words_cont);
         stats.add((double)mv.spanish_words_cont);
         System.out.println("Abreviaciones: "+mv.abreviations_words_cont);
@@ -114,20 +127,61 @@ public class Trainer {
         System.out.println("Palabras Incompletas: "+mv.uncomplete_words_cont);
         System.out.println("Palabras en Ingles: "+mv.english_words_cont);
         stats.add((double)mv.english_words_cont);
+        WriteOut();
     }
 
+    // Busca la similitud del codigo de la persona con los demas usuarios
+    // usuarios almacenados en la base de datos
     public void Simil(){
+
         System.out.println();
-        System.out.println("El codigo ingresado por el usuario: "+name);
-        System.out.println("Tiene una similitud del: "+"%");
-        System.out.println("Con el usuario: ");
+        //System.out.println("El codigo ingresado por el usuario: "+name);
+
+        double tolerance ;
+        if (mv.numlines <= 15)
+            tolerance = 0.3;
+        else
+            tolerance = 0.05;
+
+        ArrayList<String> keys = new ArrayList<>();
+        Iterator it = users.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry e = (Map.Entry)it.next();
+            keys.add(String.valueOf(e.getKey()));
+        }
+        int maxl = 0 ,max = 0;
+        String targetUser = "";
+        ArrayList<Double> target = new ArrayList<>();
+
+        for (int i = 0; i < users.size() ; i++) {
+            if(keys.get(i) != name){
+
+                //local = users.get(name);
+                target = users.get(keys.get(i));
+                for (int j = 0; j < users.get(keys.get(i)).size() ; j++) {
+                    if(stats.get(j) >= target.get(j)*tolerance && stats.get(j) <= target.get(j)+target.get(j)*tolerance)
+                        maxl++;
+
+                }
+
+                // por el momento solo selecciona un usuario
+                // se puede mostar un conjunto de usuarios si se desea
+                if(maxl > max){
+                    max = maxl; maxl = 0; targetUser = keys.get(i);
+                }else
+                    maxl = 0;
+
+            }
+        }
+
+        double ans = (double) Math.round(max/8 * 100d) / 100d;
+        System.out.println("Tiene una similitud del: "+ans*100 +" %");
+        System.out.println("Con el usuario: "+targetUser);
     }
 
     public void OutPut(){
         Read(users);
-        //System.out.println("lo que se muestra en consola");
-        //System.out.println("user"+users.size());
-        if (users.size()>=1){
+        if (users.size() >= 1){
             Calstats();
             Simil();
         }else
@@ -137,15 +191,20 @@ public class Trainer {
     public static void main(String[] args) throws IOException {
 
         Trainer t = new Trainer();
+
+        // Informacion del usuario
         t.InPut();
+
+        // Analisis Estilografico
         Python3Lexer lexer = new Python3Lexer(CharStreams.fromFileName("source/in.txt"));
         CommonTokenStream tokens = new CommonTokenStream((TokenSource) lexer);
         Python3Parser parser = new Python3Parser(tokens);
         ParseTree tree = parser.file_input();
         MyVisitor<Object> loader = new MyVisitor<Object>();
         loader.visit(tree);
+
         // Resultados del Analisis Estilografico
         t.OutPut();
-        t.WriteOut();
+
     }
 }

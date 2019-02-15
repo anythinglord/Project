@@ -33,14 +33,14 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
     static int numlines ;
 
     //Analisis condicionales
-    private int if_cont;
-    private int switch_cont;
+    static int if_cont;
+    //private int switch_cont;
 
     //Analisis bucles
-    private int for_cont;
-    private int while_cont;
-    private int lambda_cont;
-
+    static int for_cont;
+    static int while_cont;
+    static int lambda_cont;
+    static boolean lambda_exist;
     // Funcion que se utiliza para leer las palabras de la base de datos
     // Las palabras son guardadas en un Diccionario
     private void readDb( String path, HashMap<String, Integer> db ){
@@ -88,6 +88,7 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
     //Función que analizara las palabras de los nombres agregando a las variables
     private void wordAnalysis( String word ){
 
+        //System.out.println("WORD in analysis: "+word);
         if( db_abreviations.containsKey( word ) ){
             abreviations_words_cont += 1;
             uncomplete_words_cont += 1;
@@ -111,7 +112,7 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
             //lookPosibleToOther( word );
 
         } else {
-            System.out.println("else: "+word);
+            //System.out.println("else: "+word);
             other_words_cont += 1;
             uncomplete_words_cont += 1;
             addToPosible( word );
@@ -128,6 +129,7 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
 
     private void StyleAnalysis( String word){
 
+        //System.out.println("word; "+word);
         if(word.matches("[A-Z].*[a-z].*") ){
             //System.out.println("UCamelCase");
             Ucamel_case_cont++;
@@ -166,10 +168,12 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
         }else if(word.matches("[A-Z].*")){
             //System.out.println("All_caps");
             all_caps_count++;
+            wordAnalysis(word);
 
         }else if(word.matches("[a-z].*")){
             //System.out.println("Small_caps");
             small_caps_count++;
+            wordAnalysis(word.toLowerCase());
 
         };
     }
@@ -207,11 +211,12 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
         small_caps_count = 0;
 
         if_cont = 0;
-        switch_cont = 0;
+        //switch_cont = 0;
 
         for_cont = 0;
         while_cont = 0;
         lambda_cont = 0;
+        lambda_exist = false;
 
         readDb( "db/abreviation_words_db", db_abreviations );
         readDb( "db/english_words_db", db_english );
@@ -260,6 +265,8 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
     public T visitFuncdef(Python3Parser.FuncdefContext ctx) {
         //System.out.println("Funcdef");
         String name = ctx.NAME().getText();
+        if (ctx.suite().isEmpty() == false)
+            numlines +=  ctx.suite().stmt().size();
         // Analisis al nombre de las funciones
         StyleAnalysis(name);
         String params = ctx.parameters().getText();
@@ -291,6 +298,8 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
 
     @Override
     public T visitVarargslist(Python3Parser.VarargslistContext ctx) {
+        //System.out.println("Vararglist");
+        //System.out.println("lo que sea: "+ctx.vfpdef().size());
         return visitChildren(ctx);
     }
 
@@ -319,10 +328,12 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
 
 
     @Override public T visitExpr_stmt(Python3Parser.Expr_stmtContext ctx) {
-        //System.out.println("Expr_stmt");
-
+        //System.out.println("Expr_stmt: ");
+        //System.out.println("ctx: "+ctx.testlist_star_expr(0).getText());
         String variable = (String)visitTestlist_star_expr(ctx.testlist_star_expr(0));
         // Se analiza el estilo de la variable
+
+        //System.out.println("variable: "+variable);
         StyleAnalysis(variable);
 
 
@@ -516,14 +527,21 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
-    @Override public T visitWhile_stmt(Python3Parser.While_stmtContext ctx) { return visitChildren(ctx); }
+    @Override public T visitWhile_stmt(Python3Parser.While_stmtContext ctx) {
+        while_cont++;
+        return visitChildren(ctx);
+    }
     /**
      * {@inheritDoc}
      *
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
-    @Override public T visitFor_stmt(Python3Parser.For_stmtContext ctx) { return visitChildren(ctx); }
+    @Override public T visitFor_stmt(Python3Parser.For_stmtContext ctx) {
+        for_cont++;
+        numlines += ctx.suite(0).stmt().size();
+        return visitChildren(ctx);
+    }
     /**
      * {@inheritDoc}
      *
@@ -567,6 +585,7 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
      */
     @Override public T visitTest(Python3Parser.TestContext ctx) {
         //System.out.println("Test");
+        //System.out.println("ctx: "+ctx.getText());
         return visitChildren(ctx);
     }
     /**
@@ -582,7 +601,12 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
-    @Override public T visitLambdef(Python3Parser.LambdefContext ctx) { return visitChildren(ctx); }
+    @Override public T visitLambdef(Python3Parser.LambdefContext ctx) {
+        //System.out.println("lambdef");
+        lambda_cont++;
+        lambda_exist = true;
+        return visitChildren(ctx);
+    }
     /**
      * {@inheritDoc}
      *
@@ -596,14 +620,15 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
-    @Override public T visitOr_test(Python3Parser.Or_testContext ctx) { return visitChildren(ctx); }
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
-    @Override public T visitAnd_test(Python3Parser.And_testContext ctx) { return visitChildren(ctx); }
+    @Override public T visitOr_test(Python3Parser.Or_testContext ctx) {
+        //System.out.println("or_test");
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public T visitAnd_test(Python3Parser.And_testContext ctx) {
+        return visitChildren(ctx);
+    }
     /**
      * {@inheritDoc}
      *
@@ -700,7 +725,14 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
-    @Override public T visitAtom_expr(Python3Parser.Atom_exprContext ctx) { return visitChildren(ctx); }
+    @Override public T visitAtom_expr(Python3Parser.Atom_exprContext ctx) {
+        //System.out.println("Atom Expr ");
+        /*//System.out.println("Atom: "+visitAtom(ctx.atom()));
+        System.out.println("casdfsdagf: "+ctx.trailer(0).getText());
+        System.out.println("trailer; "+visitTrailer(ctx.trailer(0)));*/
+        return visitChildren(ctx);
+
+    }
     /**
      * {@inheritDoc}
      *
@@ -741,8 +773,15 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
      * {@link #visitChildren} on {@code ctx}.</p>
      */
     @Override public T visitTrailer(Python3Parser.TrailerContext ctx) {
-        System.out.println("Trailer");
-        return visitChildren(ctx);
+        //System.out.println("Trailer");
+        //System.out.println("ctx: "+ctx.getText());
+        for (int i = 0; i < ctx.arglist().argument().size() ; i++) {
+            //System.out.println("los argumentos: "+ctx.arglist().argument().get(i).getText());
+            return visitArgument(ctx.arglist().argument().get(i)) ;
+            //StyleAnalysis(ctx.arglist().argument().get(i).getText());
+        }
+        //return visitChildren(ctx);
+        return null;
     }
     /**
      * {@inheritDoc}
