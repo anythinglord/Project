@@ -30,6 +30,7 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
     static int Lcamel_case_cont;
     static int all_caps_count;
     static int small_caps_count;
+    static int snake_case_cont;
     static int numlines ;
 
     //Analisis condicionales
@@ -129,70 +130,71 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
 
     private void StyleAnalysis( String word){
 
-        //System.out.println("word; "+word);
-        if(word.matches("[A-Z].*[a-z].*") ){
-            //System.out.println("UCamelCase");
-            Ucamel_case_cont++;
-            int aux = 0;
-            for (int i = 1; i < word.length() ; i++) {
 
-                String letter = String.valueOf(word.charAt(i)) ;
-                if(letter.matches("[A-Z].*")){
-                    //System.out.println(word.substring(aux,i));
-                    wordAnalysis(word.substring(aux,i).toLowerCase());
-                    aux = i;
-                }else if(i == word.length()-1)
-                    wordAnalysis(word.substring(aux,i+1).toLowerCase());
+        if(word == null){
+            StyleAnalysis("blank");
+        }else{
+            if (word.contains("_")){
+                snake_case_cont++;
+                String [] words = word.split("_");
+                if(words.length > 1){
+                    for (int i = 0; i < words.length ; i++)
+                        wordAnalysis(words[0].toLowerCase());
+
+                }else
+                    wordAnalysis(word.toLowerCase());
 
             }
+            else if(word.matches("[A-Z].*[a-z].*") ){
+                //System.out.println("UCamelCase");
+                Ucamel_case_cont++;
+                int aux = 0;
+                for (int i = 1; i < word.length() ; i++) {
 
-        }else if(word.matches("[a-z].*[A-Z].*")){
-            System.out.println("LCamelCase");
-            Lcamel_case_cont++;
-            int aux = 0;
-            for (int i = 1; i < word.length() ; i++) {
+                    String letter = String.valueOf(word.charAt(i)) ;
+                    if(letter.matches("[A-Z].*")){
+                        //System.out.println(word.substring(aux,i));
+                        wordAnalysis(word.substring(aux,i).toLowerCase());
+                        aux = i;
+                    }else if(i == word.length()-1)
+                        wordAnalysis(word.substring(aux,i+1).toLowerCase());
 
-                String letter = String.valueOf(word.charAt(i)) ;
-                if(letter.matches("[A-Z].*")){
-                    //System.out.println(word.substring(aux,i).toLowerCase());
-                    wordAnalysis(word.substring(aux,i).toLowerCase());
-                    aux = i;
-                }else if(i == word.length()-1){
-                    //System.out.println(word.substring(aux,i+1).toLowerCase());
-                    wordAnalysis(word.substring(aux,i+1).toLowerCase());
                 }
 
+            }else if(word.matches("[a-z].*[A-Z].*")){
+                //System.out.println("LCamelCase");
+                Lcamel_case_cont++;
+                int aux = 0;
+                for (int i = 1; i < word.length() ; i++) {
 
-            }
-
-        }else if(word.matches("[A-Z].*")){
-            //System.out.println("All_caps");
-            all_caps_count++;
-            wordAnalysis(word);
-
-        }else if(word.matches("[a-z].*")){
-            //System.out.println("Small_caps");
-            small_caps_count++;
-            wordAnalysis(word.toLowerCase());
-
-        };
-    }
-
-
+                    String letter = String.valueOf(word.charAt(i)) ;
+                    if(letter.matches("[A-Z].*")){
+                        //System.out.println(word.substring(aux,i).toLowerCase());
+                        wordAnalysis(word.substring(aux,i).toLowerCase());
+                        aux = i;
+                    }else if(i == word.length()-1){
+                        //System.out.println(word.substring(aux,i+1).toLowerCase());
+                        wordAnalysis(word.substring(aux,i+1).toLowerCase());
+                    }
 
 
-    /*private void lookPosibleToOther( String word ){
+                }
 
-        System.out.println(db_posible_words);
-        if( db_posible_words.get( word ) >= 10 && !db_other_words.containsKey( word ) ){
-            db_other_words.put( word, 1 );
-            writeDb( "db/other_words_db", word );
-        } else {
-            db_posible_words.put( word, db_posible_words.get( word )+1 );
-            writeDb( "db/posible_words_db", word );
+            }else if(word.matches("[A-Z].*")){
+                //System.out.println("All_caps");
+                all_caps_count++;
+                wordAnalysis(word);
+
+            }else if(word.matches("[a-z].*")){
+                //System.out.println("Small_caps");
+                small_caps_count++;
+                wordAnalysis(word.toLowerCase());
+
+            };
         }
 
-    }*/
+    }
+
 
     //Función donde se inicializara las variables para el analisis del codigo.
     //Se inicializaran todas las variables que requieran un valor por defecto cuando se introdusca un codigo nuevo
@@ -209,6 +211,7 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
         Lcamel_case_cont = 0;
         all_caps_count = 0;
         small_caps_count = 0;
+        snake_case_cont = 0;
 
         if_cont = 0;
         //switch_cont = 0;
@@ -267,6 +270,7 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
         String name = ctx.NAME().getText();
         if (ctx.suite().isEmpty() == false)
             numlines +=  ctx.suite().stmt().size();
+
         // Analisis al nombre de las funciones
         StyleAnalysis(name);
         String params = ctx.parameters().getText();
@@ -518,7 +522,8 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
      * {@link #visitChildren} on {@code ctx}.</p>
      */
     @Override public T visitIf_stmt(Python3Parser.If_stmtContext ctx) {
-
+        if_cont++;
+        numlines += ctx.suite(0).stmt().size();
         return visitChildren(ctx);
     }
     /**
@@ -750,10 +755,15 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
             //ident = "NUMBER";
             return (T)ctx.NUMBER().getText();
         }
-        else if(ctx.STRING()!=null){
-            //System.out.println("STRING");
+        else if(ctx.STRING()!=null && ctx.STRING().size() > 0){
+
             //ident = "STRING";
             return (T)ctx.STRING(0).getText();
+        }else if(ctx.FALSE()!=null){
+            return (T)ctx.FALSE().getText();
+        }
+        else if(ctx.TRUE()!=null){
+            return (T)ctx.TRUE().getText();
         }
         else{
             return (T)visitChildren(ctx);
@@ -773,13 +783,29 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
      * {@link #visitChildren} on {@code ctx}.</p>
      */
     @Override public T visitTrailer(Python3Parser.TrailerContext ctx) {
+
+        if(ctx.DOT()!=null){
+            return (T)ctx.NAME().getText();
+        }else if(ctx.OPEN_PAREN()!=null){
+            if(ctx.arglist()==null)
+                return (T)" ";
+            else{
+                for (int i = 0; i < ctx.arglist().argument().size() ; i++)
+                    return visitArgument(ctx.arglist().argument().get(i)) ;
+
+            }
+
+        }else{
+            for (int i = 0; i < ctx.subscriptlist().subscript().size() ; i++)
+                return visitSubscript(ctx.subscriptlist().subscript().get(i)) ;
+        }
         //System.out.println("Trailer");
         //System.out.println("ctx: "+ctx.getText());
-        for (int i = 0; i < ctx.arglist().argument().size() ; i++) {
+        /*for (int i = 0; i < ctx.arglist().argument().size() ; i++) {
             //System.out.println("los argumentos: "+ctx.arglist().argument().get(i).getText());
             return visitArgument(ctx.arglist().argument().get(i)) ;
             //StyleAnalysis(ctx.arglist().argument().get(i).getText());
-        }
+        }*/
         //return visitChildren(ctx);
         return null;
     }
@@ -833,7 +859,7 @@ public class MyVisitor<T> extends Python3BaseVisitor<T> {
      */
     @Override
     public T visitClassdef(Python3Parser.ClassdefContext ctx) {
-        System.out.println("Classdef");
+        //System.out.println("Classdef");
         String Name = ctx.NAME().getText();
         StyleAnalysis(Name);
         return visitChildren(ctx);
